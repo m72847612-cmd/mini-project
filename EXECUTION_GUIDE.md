@@ -154,16 +154,32 @@ python infer.py \
 - Processes each image in the specified directory
 - Generates binary masks (white = deforested, black = forest)
 - Calculates deforestation percentage for each image
-- Saves masks to output directory
+- **Creates visualization charts** (pie chart and bar chart) for each image
+- **Creates summary chart** comparing all images (if multiple images processed)
+- Saves masks and charts to output directory
 
 **Expected output:**
 ```
 Using device: cuda (or mps/cpu)
-Saved mask for AE-X07.png to outputs/masks/AE-X07.png
+Processing AE-X07.png...
+✓ Saved mask for AE-X07.png to outputs/masks/AE-X07.png
   Deforestation: 12.34% (xxxxx/xxxxx pixels)
-Saved mask for AE-X08.png to outputs/masks/AE-X08.png
+  📊 Saved chart: outputs/masks/AE-X07_deforestation_chart.png
+Processing AE-X08.png...
+✓ Saved mask for AE-X08.png to outputs/masks/AE-X08.png
   Deforestation: 8.76% (xxxxx/xxxxx pixels)
+  📊 Saved chart: outputs/masks/AE-X08_deforestation_chart.png
+
+📊 Summary chart saved: outputs/masks/deforestation_summary.png
 ```
+
+**Visualization Outputs:**
+- **Individual Charts**: Each image gets a pie chart and bar chart showing forest vs deforested percentages
+  - File format: `{image_name}_deforestation_chart.png`
+  - Shows: Pie chart with percentages, bar chart with pixel counts
+- **Summary Chart**: If processing multiple images, a comparison bar chart is created
+  - File format: `deforestation_summary.png`
+  - Shows: Side-by-side comparison of all images' deforestation rates
 
 ---
 
