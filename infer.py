@@ -72,6 +72,13 @@ def main() -> None:
 
     os.makedirs(args.output_dir, exist_ok=True)
 
+    # Check if checkpoint exists
+    if not os.path.exists(args.checkpoint):
+        raise FileNotFoundError(
+            f"Model checkpoint not found: {args.checkpoint}\n"
+            f"Please train the model first or specify the correct checkpoint path with --checkpoint"
+        )
+
     model = load_model(args.checkpoint, device, args.image_size)
 
     transform = T.Compose(
@@ -92,27 +99,49 @@ def main() -> None:
         raise RuntimeError(f"No images found in {args.image_dir}")
 
     for img_path in image_paths:
-        img_name = os.path.basename(img_path)
-        image = Image.open(img_path).convert("RGB")
-        input_tensor = transform(image).unsqueeze(0).to(device)
+        try:
+            img_name = os.path.basename(img_path)
+            print(f"Processing {img_name}...")
+            
+            image = Image.open(img_path).convert("RGB")
+            input_tensor = transform(image).unsqueeze(0).to(device)
 
-        with torch.no_grad():
-            logits = model(input_tensor)
-            probs = torch.sigmoid(logits)
-            pred_mask = (probs > args.threshold).float()
+            with torch.no_grad():
+                logits = model(input_tensor)
+                probs = torch.sigmoid(logits)
+                pred_mask = (probs > args.threshold).float()
+                
+                # Debug: Print probability statistics
+                prob_min = probs.min().item()
+                prob_max = probs.max().item()
+                prob_mean = probs.mean().item()
+                print(f"  Probability range: [{prob_min:.4f}, {prob_max:.4f}], mean: {prob_mean:.4f}")
 
-        mask_np = pred_mask.squeeze().cpu().numpy()
-        mask_img = Image.fromarray((mask_np * 255).astype("uint8"))
+            # Handle different tensor shapes
+            mask_np = pred_mask.squeeze().cpu().numpy()
+            
+            # Ensure 2D array for PIL Image
+            if mask_np.ndim > 2:
+                mask_np = mask_np.squeeze()
+            if mask_np.ndim != 2:
+                raise ValueError(f"Unexpected mask shape: {mask_np.shape}")
+            
+            mask_img = Image.fromarray((mask_np * 255).astype("uint8"), mode='L')
 
-        # Calculate deforestation percentage
-        total_pixels = mask_np.size
-        deforested_pixels = mask_np.sum()
-        deforestation_percentage = (deforested_pixels / total_pixels) * 100.0
+            # Calculate deforestation percentage
+            total_pixels = mask_np.size
+            deforested_pixels = float(mask_np.sum())
+            deforestation_percentage = (deforested_pixels / total_pixels) * 100.0
 
-        save_path = os.path.join(args.output_dir, img_name)
-        mask_img.save(save_path)
-        print(f"Saved mask for {img_name} to {save_path}")
-        print(f"  Deforestation: {deforestation_percentage:.2f}% ({deforested_pixels}/{total_pixels} pixels)")
+            save_path = os.path.join(args.output_dir, img_name)
+            mask_img.save(save_path)
+            print(f"✓ Saved mask for {img_name} to {save_path}")
+            print(f"  Deforestation: {deforestation_percentage:.2f}% ({int(deforested_pixels)}/{total_pixels} pixels)")
+        except Exception as e:
+            print(f"✗ Error processing {img_name}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            continue
 
 
 if __name__ == "__main__":
