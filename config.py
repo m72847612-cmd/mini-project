@@ -23,5 +23,8 @@ class Config:
     device: str = "cuda"
     checkpoint_dir: str = "checkpoints"
     best_model_path: str = "checkpoints/best_model.pth"
+    model_architecture: str = "baseline_unet"  # baseline_unet or smp_unet
+    encoder_name: str = "timm-efficientnet-b3"
+    encoder_weights: str | None = "imagenet"
 
 

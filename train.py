@@ -8,7 +8,7 @@ from torch import optim
 from config import Config
 from data import create_dataloaders
 from losses import BCEDiceLoss
-from model import UNet
+from model_factory import build_model
 from train_utils import train_one_epoch, validate, save_checkpoint
 
 
@@ -27,6 +27,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint-dir", type=str, default=Config.checkpoint_dir)
     parser.add_argument("--best-model-path", type=str, default=Config.best_model_path)
     parser.add_argument("--device", type=str, default=None, help="cuda, cpu, or mps")
+    parser.add_argument(
+        "--advanced-augs",
+        action="store_true",
+        help="Use Albumentations-based strong augmentations and normalization",
+    )
     return parser.parse_args()
 
 
@@ -55,9 +60,10 @@ def main() -> None:
         image_size=args.image_size,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
+        use_albumentations=args.advanced_augs,
     )
 
-    model = UNet(in_channels=Config.in_channels, out_channels=Config.out_channels)
+    model = build_model()
     model.to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)

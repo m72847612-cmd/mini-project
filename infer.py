@@ -3,13 +3,14 @@ import os
 from typing import List, Tuple
 
 import torch
+from torch import nn
 from PIL import Image
 import torchvision.transforms as T
 import matplotlib.pyplot as plt
 import numpy as np
 
 from config import Config
-from model import UNet
+from model_factory import build_model
 from train_utils import load_checkpoint
 
 
@@ -49,8 +50,8 @@ def get_device(arg_device: str | None) -> torch.device:
     return torch.device("cpu")
 
 
-def load_model(checkpoint_path: str, device: torch.device, image_size: int) -> UNet:
-    model = UNet(in_channels=Config.in_channels, out_channels=Config.out_channels)
+def load_model(checkpoint_path: str, device: torch.device, image_size: int) -> nn.Module:
+    model = build_model()
     model = load_checkpoint(model, checkpoint_path, device)
     model.to(device)
     model.eval()
